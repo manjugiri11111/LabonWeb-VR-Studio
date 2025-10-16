@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LabOnWeb VR - Interactive UI System</title>
+  <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+      background: #1a1a1a;
+    }
+
+    /* Main Container - Split Screen */
+    .container {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Left Panel - Input Controls */
+    .control-panel {
+      width: 400px;
+      background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+      padding: 20px;
+      overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+      z-index: 1000;
+      color: #fff;
+    }
+
+    /* Right Panel - VR Scene */
+    .vr-viewport {
+      flex: 1;
+      position: relative;
+    }
+
+    /* Panel Header */
+    .panel-header {
+      margin-bottom: 30px;
+      border-bottom: 2px solid #4CC3D9;
+      padding-bottom: 15px;
+    }
+
+    .panel-header h1 {
+      margin: 0 0 10px 0;
+      font-size: 24px;
+      color: #4CC3D9;
+    }
+
+    .panel-header p {
+      margin: 0;
+      color: #b0b0b0;
+      font-size: 14px;
+    }
+
+    /* Control Groups */
+    .control-group {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .control-group h3 {
+      margin: 0 0 15px 0;
+      color: #4CC3D9;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+    }
+
+    .control-group h3::before {
+      content: '▸';
+      margin-right: 8px;
+      color: #FFC65D;
+    }
+
+    /* Form Elements */
+    .form-field {
+      margin-bottom: 15px;
+    }
+
+    .form-field label {
+      display: block;
+      margin-bottom: 6px;
+      color: #e0e0e0;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .form-field input[type="number"],
+    .form-field input[type="range"],
+    .form-field input[type="color"],
+    .form-field select {
+      width: 100%;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+
+    .form-field input[type="number"]:focus,
+    .form-field select:focus {
+      outline: none;
+      border-color: #4CC3D9;
+      background: rgba(76, 195, 217, 0.1);
+    }
+
+    .form-field input[type="range"] {
+      padding: 0;
+      height: 6px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .form-field input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      background: #4CC3D9;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .form-field input[type="color"] {
+      height: 50px;
+      cursor: pointer;
+      border: 3px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .form-field input[type="color"]:hover {
+      border-color: #4CC3D9;
+    }
+
+    /* Range Value Display */
+    .range-value {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .range-value span {
+      background: rgba(76, 195, 217, 0.2);
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      color: #4CC3D9;
+      font-weight: 600;
+    }
+
+    /* Buttons */
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #4CC3D9 0%, #3a9fb3 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(76, 195, 217, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(76, 195, 217, 0.4);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e0e0e0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #EF2D5E 0%, #c92550 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(239, 45, 94, 0.3);
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(239, 45, 94, 0.4);
+    }
+
+    /* Info Display */
+    .info-display {
+      background: rgba(76, 195, 217, 0.1);
+      border-left: 3px solid #4CC3D9;
+      padding: 12px 15px;
+      border-radius: 4px;
+      margin-top: 20px;
+      font-size: 13px;
+    }
+
+    .info-display strong {
+      color: #4CC3D9;
+    }
+
+    /* Status Indicator */
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 15px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #4CC3D9;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .status-dot.running {
+      background: #2ecc71;
+    }
+
+    .status-dot.stopped {
+      background: #95a5a6;
+    }
+
+    /* Toggle Switch */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 26px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.2);
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background-color: #4CC3D9;
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(24px);
+    }
+
+    /* VR Controls Overlay */
+    .vr-controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      padding: 12px 24px;
+      border-radius: 25px;
+      color: white;
+      font-size: 13px;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    /* Scrollbar Styling */
+    .control-panel::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .control-panel::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .control-panel::-webkit-scrollbar-thumb {
+      background: rgba(76, 195, 217, 0.5);
+      border-radius: 4px;
+    }
+
+    .control-panel::-webkit-scrollbar-thumb:hover {
+      background: rgba(76, 195, 217, 0.7);
+    }
+
+    /* Preset Buttons */
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .preset-btn {
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      color: #e0e0e0;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 12px;
+    }
+
+    .preset-btn:hover {
+      background: rgba(76, 195, 217, 0.2);
+      border-color: #4CC3D9;
+      color: #4CC3D9;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Main Container -->
+  <div class="container">
+    
+    <!-- Left Panel: Input Controls -->
+    <div class="control-panel">
+      
+      <!-- Header -->
+      <div class="panel-header">
+        <h1>🧪 LabOnWeb VR Studio</h1>
+        <p>Configure and render your 3D simulation</p>
+      </div>
+
+      <!-- Status -->
+      <div class="status">
+        <div class="status-dot stopped" id="statusDot"></div>
+        <span id="statusText">Ready to render</span>
+      </div>
+
+      <!-- Object Selection -->
+      <div class="control-group">
+        <h3>Object Type</h3>
+        <div class="form-field">
+          <label>Select Geometric Shape</label>
+          <select id="objectType">
+            <option value="box">Box</option>
+            <option value="sphere" selected>Sphere</option>
+            <option value="cylinder">Cylinder</option>
+            <option value="cone">Cone</option>
+            <option value="torus">Torus</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Size Controls -->
+      <div class="control-group">
+        <h3>Size & Scale</h3>
+        
+        <div class="form-field">
+          <div class="range-value">
+            <label>Width / Radius</label>
+            <span id="sizeXValue">1.0</span>
+          </div>
+          <input type="range" id="sizeX" min="0.1" max="3" step="0.1" value="1">
+        </div>
+
+        <div class="form-field">
+          <div class="range-value">
+            <label>Height</label>
+            <span id="sizeYValue">1.0</span>
+          </div>
+          <input type="range" id="sizeY" min="0.1" max="3" step="0.1" value="1">
+        </div>
+
+        <div class="form-field">
+          <div class="range-value">
+            <label>Depth</label>
+            <span id="sizeZValue">1.0</span>
+          </div>
+          <input type="range" id="sizeZ" min="0.1" max="3" step="0.1" value="1">
+        </div>
+
+        <div class="preset-grid">
+          <button class="preset-btn" onclick="setSize(0.5, 0.5, 0.5)">Small</button>
+          <button class="preset-btn" onclick="setSize(1, 1, 1)">Medium</button>
+          <button class="preset-btn" onclick="setSize(2, 2, 2)">Large</button>
+          <button class="preset-btn" onclick="setSize(3, 1, 1)">Stretched</button>
+        </div>
+      </div>
+
+      <!-- Color Controls -->
+      <div class="control-group">
+        <h3>Appearance</h3>
+        
+        <div class="form-field">
+          <label>Object Color</label>
+          <input type="color" id="objectColor" value="#4CC3D9">
+        </div>
+
+        <div class="form-field">
+          <div class="range-value">
+            <label>Metalness</label>
+            <span id="metalnessValue">0.5</span>
+          </div>
+          <input type="range" id="metalness" min="0" max="1" step="0.1" value="0.5">
+        </div>
+
+        <div class="form-field">
+          <div class="range-value">
+            <label>Roughness</label>
+            <span id="roughnessValue">0.5</span>
+          </div>
+          <input type="range" id="roughness" min="0" max="1" step="0.1" value="0.5">
+        </div>
+
+        <div class="form-field">
+          <div class="range-value">
+            <label>Opacity</label>
+            <span id="opacityValue">1.0</span>
+          </div>
+          <input type="range" id="opacity" min="0" max="1" step="0.1" value="1">
+        </div>
+      </div>
+
+      <!-- Animation Controls -->
+      <div class="control-group">
+        <h3>Animation</h3>
+        
+        <div class="toggle-container">
+          <label>Enable Rotation</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="enableRotation">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="form-field">
+          <div class="range-value">
+            <label>Rotation Speed</label>
+            <span id="rotationSpeedValue">2.0</span>
+          </div>
+          <input type="range" id="rotationSpeed" min="0.5" max="10" step="0.5" value="2">
+        </div>
+
+        <div class="toggle-container">
+          <label>Enable Bounce</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="enableBounce">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Physics Controls -->
+      <div class="control-group">
+        <h3>Physics Simulation</h3>
+        
+        <div class="toggle-container">
+          <label>Enable Gravity</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="enableGravity">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="form-field">
+          <div class="range-value">
+            <label>Gravity Strength</label>
+            <span id="gravityValue">9.8</span>
+          </div>
+          <input type="range" id="gravity" min="1" max="20" step="0.1" value="9.8">
+        </div>
+
+        <div class="form-field">
+          <div class="range-value">
+            <label>Bounciness</label>
+            <span id="bouncinessValue">0.8</span>
+          </div>
+          <input type="range" id="bounciness" min="0" max="1" step="0.1" value="0.8">
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="button-group">
+        <button class="btn btn-primary" onclick="renderSimulation()">
+          🚀 Render
+        </button>
+        <button class="btn btn-secondary" onclick="pauseSimulation()">
+          ⏸ Pause
+        </button>
+      </div>
+
+      <div class="button-group">
+        <button class="btn btn-danger" onclick="resetSimulation()">
+          🔄 Reset
+        </button>
+      </div>
+
+      <!-- Info Display -->
+      <div class="info-display">
+        <strong>💡 Tip:</strong> Adjust parameters and click "Render" to see changes in real-time!
+      </div>
+
+    </div>
+
+    <!-- Right Panel: VR Viewport -->
+    <div class="vr-viewport">
+      
+      <a-scene 
+        id="scene"
+        embedded
+        renderer="antialias: true; colorManagement: true"
+        vr-mode-ui="enabled: true"
+      >
+      <!-- Enter VR -->
+        <script>
+          document.addEventListener('DOMContentLoaded', () => {
+            const scene = document.querySelector('a-scene');
+            if (!scene.hasLoaded) {
+              scene.addEventListener('loaded', () => { scene.enterVR(); });
+            } else {
+              scene.enterVR();
+            }
+  });
+</script>
+
+        <!-- Assets -->
+        <a-assets>
+          <!-- Preload any textures or models here -->
+        </a-assets>
+
+        <!-- Lights -->
+        <a-entity light="type: ambient; color: #BBB; intensity: 0.5"></a-entity>
+        <a-entity 
+          light="type: directional; color: #FFF; intensity: 0.8; castShadow: true" 
+          position="2 4 2"
+        ></a-entity>
+        <a-entity 
+          light="type: point; color: #4CC3D9; intensity: 0.3; distance: 10" 
+          position="-2 2 -2"
+        ></a-entity>
+
+        <!-- Ground -->
+        <a-plane 
+          position="0 0 -4"
+          rotation="-90 0 0"
+          width="20"
+          height="20"
+          color="#34495e"
+          shadow="receive: true"
+          material="roughness: 0.8"
+        ></a-plane>
+
+        <!-- Grid Helper -->
+        <a-entity 
+          geometry="primitive: plane; width: 20; height: 20"
+          material="shader: flat; src: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDEwIDAgTCAwIDAgMCAxMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM2Y1MTYxIiBzdHJva2Utd2lkdGg9IjAuNSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=); opacity: 0.3"
+          position="0 0.01 -4"
+          rotation="-90 0 0"
+        ></a-entity>
+
+        <!-- Main Object (will be dynamically created) -->
+        <a-entity id="mainObject" position="0 1.5 -4"></a-entity>
+
+        <!-- Reference Objects for scale -->
+        <a-box 
+          position="-3 0.25 -4"
+          width="0.5"
+          height="0.5"
+          depth="0.5"
+          color="#95a5a6"
+          opacity="0.5"
+        >
+          <a-text 
+            value="Reference\n0.5m" 
+            position="0 0.5 0" 
+            align="center" 
+            width="2"
+            color="#ecf0f1"
+          ></a-text>
+        </a-box>
+
+        <!-- Sky -->
+        <a-sky color="#1a1a2e"></a-sky>
+
+        <!-- Camera with orbit controls -->
+        <a-entity 
+          id="camera-rig"
+          position="0 1.6 0"
+        >
+          <a-camera 
+            look-controls="pointerLockEnabled: false"
+            wasd-controls="enabled: false"
+          >
+            <a-cursor
+              color="#4CC3D9"
+              opacity="0.8"
+            ></a-cursor>
+          </a-camera>
+        </a-entity>
+
+      </a-scene>
+
+      <!-- VR Controls Info -->
+      <div class="vr-controls">
+        🖱️ Drag to rotate view • Scroll to zoom • Use controls panel to modify object
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // ===== GLOBAL STATE =====
+    let currentObject = null;
+    let simulationRunning = false;
+    let animationFrame = null;
+
+    // ===== INITIALIZATION =====
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeControls();
+      setupOrbitControls();
+      renderInitialObject();
+    });
+
+    // ===== CONTROL INITIALIZATION =====
+    function initializeControls() {
+      // Update range value displays
+      const rangeInputs = document.querySelectorAll('input[type="range"]');
+      rangeInputs.forEach(input => {
+        const valueDisplay = document.getElementById(input.id + 'Value');
+        input.addEventListener('input', (e) => {
+          if (valueDisplay) {
+            valueDisplay.textContent = parseFloat(e.target.value).toFixed(1);
+          }
+        });
+      });
+
+      // Object type change
+      document.getElementById('objectType').addEventListener('change', () => {
+        updateSizeLabels();
+      });
+    }
+
+    // ===== UPDATE SIZE LABELS BASED ON OBJECT TYPE =====
+    function updateSizeLabels() {
+      const type = document.getElementById('objectType').value;
+      const labels = document.querySelectorAll('.form-field label');
+      
+      // Update labels based on geometry
+      if (type === 'sphere') {
+        labels[1].textContent = 'Radius';
+      } else if (type === 'cylinder' || type === 'cone') {
+        labels[1].textContent = 'Radius';
+        labels[2].textContent = 'Height';
+      } else {
+        labels[1].textContent = 'Width';
+        labels[2].textContent = 'Height';
+        labels[3].textContent = 'Depth';
+      }
+    }
+
+    // ===== ORBIT CONTROLS SETUP =====
+    function setupOrbitControls() {
+      const camera = document.querySelector('#camera-rig');
+      const scene = document.querySelector('#scene');
+      
+      let isDragging = false;
+      let previousMousePosition = { x: 0, y: 0 };
+      let rotation = { x: 0, y: 0 };
+      let distance = 5;
+
+      scene.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+      });
+
+      scene.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          const deltaX = e.clientX - previousMousePosition.x;
+          const deltaY = e.clientY - previousMousePosition.y;
+
+          rotation.y += deltaX * 0.5;
+          rotation.x += deltaY * 0.5;
+
+          // Limit vertical rotation
+          rotation.x = Math.max(-60, Math.min(60, rotation.x));
+
+          updateCameraPosition();
+
+          previousMousePosition = { x: e.clientX, y: e.clientY };
+        }
+      });
+
+      scene.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+
+      scene.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        distance += e.deltaY * 0.01;
+        distance = Math.max(2, Math.min(15, distance));
+        updateCameraPosition();
+      });
+
+      function updateCameraPosition() {
+        const radX = rotation.x * Math.PI / 180;
+        const radY = rotation.y * Math.PI / 180;
+
+        const x = distance * Math.sin(radY) * Math.cos(radX);
+        const y = distance * Math.sin(radX) + 1.6;
+        const z = distance * Math.cos(radY) * Math.cos(radX);
+
+        camera.setAttribute('position', `${x} ${y} ${z}`);
+        camera.setAttribute('rotation', `${-rotation.x} ${rotation.y} 0`);
+      }
+
+      updateCameraPosition();
+    }
+
+    // ===== PRESET SIZE FUNCTIONS =====
+    function setSize(x, y, z) {
+      document.getElementById('sizeX').value = x;
+      document.getElementById('sizeY').value = y;
+      document.getElementById('sizeZ').value = z;
+      
+      document.getElementById('sizeXValue').textContent = x.toFixed(1);
+      document.getElementById('sizeYValue').textContent = y.toFixed(1);
+      document.getElementById('sizeZValue').textContent = z.toFixed(1);
+    }
+
+    // ===== RENDER INITIAL OBJECT =====
+    function renderInitialObject() {
+      renderSimulation();
+    }
+
+    // ===== MAIN RENDER FUNCTION =====
+    function renderSimulation() {
+      // Get all parameters
+      const params = {
+        type: document.getElementById('objectType').value,
+        sizeX: parseFloat(document.getElementById('sizeX').value),
+        sizeY: parseFloat(document.getElementById('sizeY').value),
+        sizeZ: parseFloat(document.getElementById('sizeZ').value),
+        color: document.getElementById('objectColor').value,
+        metalness: parseFloat(document.getElementById('metalness').value),
+        roughness: parseFloat(document.getElementById('roughness').value),
+        opacity: parseFloat(document.getElementById('opacity').value),
+        enableRotation: document.getElementById('enableRotation').checked,
+        rotationSpeed: parseFloat(document.getElementById('rotationSpeed').value),
+        enableBounce: document.getElementById('enableBounce').checked,
+        enableGravity: document.getElementById('enableGravity').checked,
+        gravity: parseFloat(document.getElementById('gravity').value),
+        bounciness: parseFloat(document.getElementById('bounciness').value)
+      };
+
+      // Remove existing object
+      const container = document.getElementById('mainObject');
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+
+      // Create new object
+      createObject(container, params);
+
+      // Update status
+      updateStatus('running', 'Simulation running');
+      simulationRunning = true;
+
+      // Start animation if enabled
+      if (params.enableRotation || params.enableBounce || params.enableGravity) {
+        startAnimation(container, params);
+      }
+    }
+
+    // ===== CREATE 3D OBJECT =====
+    function createObject(container, params) {
+      let geometry;
+      
+      switch(params.type) {
+        case 'box':
+          geometry = document.createElement('a-box');
+          geometry.setAttribute('width', params.sizeX);
+          geometry.setAttribute('height', params.sizeY);
+          geometry.setAttribute('depth', params.sizeZ);
+          break;
+          
+        case 'sphere':
+          geometry = document.createElement('a-sphere');
+          geometry.setAttribute('radius', params.sizeX);
+          geometry.setAttribute('segments-width', 32);
+          geometry.setAttribute('segments-height', 24);
+          break;
+          
+        case 'cylinder':
+          geometry = document.createElement('a-cylinder');
+          geometry.setAttribute('radius', params.sizeX);
+          geometry.setAttribute('height', params.sizeY);
+          break;
+          
+        case 'cone':
+          geometry = document.createElement('a-cone');
+          geometry.setAttribute('radius-bottom', params.sizeX);
+          geometry.setAttribute('height', params.sizeY);
+          break;
+          
+        case 'torus':
+          geometry = document.createElement('a-torus');
+          geometry.setAttribute('radius', params.sizeX);
+          geometry.setAttribute('radius-tubular', params.sizeX * 0.3);
+          break;
+      }
+
+      // Set material properties
+      geometry.setAttribute('material', {
+        color: params.color,
+        metalness: params.metalness,
+        roughness: params.roughness,
+        opacity: params.opacity,
+        transparent: params.opacity < 1
+      });
+
+      // Enable shadows
+      geometry.setAttribute('shadow', 'cast: true; receive: false');
+
+      // Add to container
+      container.appendChild(geometry);
+      currentObject = geometry;
+
+      // Add label showing current parameters
+      const label = document.createElement('a-text');
+      label.setAttribute('value', `${params.type.toUpperCase()}\nSize: ${params.sizeX.toFixed(1)}m`);
+      label.setAttribute('position', '0 ' + (params.sizeY + 0.5) + ' 0');
+      label.setAttribute('align', 'center');
+      label.setAttribute('width', '3');
+      label.setAttribute('color', params.color);
+      container.appendChild(label);
+    }
+
+    // ===== ANIMATION SYSTEM =====
+    function startAnimation(container, params) {
+      // Stop any existing animation
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+
+      let time = 0;
+      let velocity = { x: 0, y: 0, z: 0 };
+      let position = { x: 0, y: 1.5, z: -4 };
+      let rotation = { x: 0, y: 0, z: 0 };
+
+      function animate() {
+        time += 0.016; // ~60fps
+
+        // Rotation animation
+        if (params.enableRotation) {
+          rotation.y += params.rotationSpeed * 0.016 * 50;
+          rotation.x += params.rotationSpeed * 0.016 * 30;
+        }
+
+        // Bounce animation
+        if (params.enableBounce && !params.enableGravity) {
+          position.y = 1.5 + Math.sin(time * 2) * 0.5;
+        }
+
+        // Gravity physics
+        if (params.enableGravity) {
+          velocity.y -= params.gravity * 0.016;
+          position.y += velocity.y * 0.016;
+
+          // Ground collision
+          const groundY = params.sizeY / 2 + 0.01;
+          if (position.y <= groundY) {
+            position.y = groundY;
+            velocity.y = -velocity.y * params.bounciness;
+
+            // Stop if velocity is too low
+            if (Math.abs(velocity.y) < 0.1) {
+              velocity.y = 0;
+            }
+          }
+        }
+
+        // Apply transformations
+        container.setAttribute('position', `${position.x} ${position.y} ${position.z}`);
+        container.setAttribute('rotation', `${rotation.x} ${rotation.y} ${rotation.z}`);
+
+        animationFrame = requestAnimationFrame(animate);
+      }
+
+      animate();
+    }
+
+    // ===== PAUSE SIMULATION =====
+    function pauseSimulation() {
+      if (simulationRunning) {
+        if (animationFrame) {
+          cancelAnimationFrame(animationFrame);
+          animationFrame = null;
+        }
+        updateStatus('stopped', 'Simulation paused');
+        simulationRunning = false;
+      } else {
+        // Resume simulation
+        renderSimulation();
+      }
+    }
+
+    // ===== RESET SIMULATION =====
+    function resetSimulation() {
+      // Stop animation
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+        animationFrame = null;
+      }
+
+      // Reset all controls to defaults
+      document.getElementById('objectType').value = 'sphere';
+      document.getElementById('sizeX').value = 1;
+      document.getElementById('sizeY').value = 1;
+      document.getElementById('sizeZ').value = 1;
+      document.getElementById('objectColor').value = '#4CC3D9';
+      document.getElementById('metalness').value = 0.5;
+      document.getElementById('roughness').value = 0.5;
+      document.getElementById('opacity').value = 1;
+      document.getElementById('enableRotation').checked = false;
+      document.getElementById('rotationSpeed').value = 2;
+      document.getElementById('enableBounce').checked = false;
+      document.getElementById('enableGravity').checked = false;
+      document.getElementById('gravity').value = 9.8;
+      document.getElementById('bounciness').value = 0.8;
+
+      // Update all value displays
+      document.getElementById('sizeXValue').textContent = '1.0';
+      document.getElementById('sizeYValue').textContent = '1.0';
+      document.getElementById('sizeZValue').textContent = '1.0';
+      document.getElementById('metalnessValue').textContent = '0.5';
+      document.getElementById('roughnessValue').textContent = '0.5';
+      document.getElementById('opacityValue').textContent = '1.0';
+      document.getElementById('rotationSpeedValue').textContent = '2.0';
+      document.getElementById('gravityValue').textContent = '9.8';
+      document.getElementById('bouncinessValue').textContent = '0.8';
+
+      // Reset object position
+      const container = document.getElementById('mainObject');
+      container.setAttribute('position', '0 1.5 -4');
+      container.setAttribute('rotation', '0 0 0');
+
+      // Re-render with defaults
+      renderSimulation();
+
+      updateStatus('stopped', 'Reset to defaults');
+    }
+
+    // ===== UPDATE STATUS =====
+    function updateStatus(state, message) {
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+
+      dot.className = 'status-dot ' + state;
+      text.textContent = message;
+    }
+
+    // ===== KEYBOARD SHORTCUTS =====
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        pauseSimulation();
+      } else if (e.code === 'KeyR') {
+        e.preventDefault();
+        renderSimulation();
+      } else if (e.code === 'Escape') {
+        e.preventDefault();
+        resetSimulation();
+      }
+    });
+
+    // ===== EXPORT CONFIGURATION =====
+    function exportConfig() {
+      const config = {
+        type: document.getElementById('objectType').value,
+        size: {
+          x: parseFloat(document.getElementById('sizeX').value),
+          y: parseFloat(document.getElementById('sizeY').value),
+          z: parseFloat(document.getElementById('sizeZ').value)
+        },
+        color: document.getElementById('objectColor').value,
+        material: {
+          metalness: parseFloat(document.getElementById('metalness').value),
+          roughness: parseFloat(document.getElementById('roughness').value),
+          opacity: parseFloat(document.getElementById('opacity').value)
+        },
+        animation: {
+          enableRotation: document.getElementById('enableRotation').checked,
+          rotationSpeed: parseFloat(document.getElementById('rotationSpeed').value),
+          enableBounce: document.getElementById('enableBounce').checked
+        },
+        physics: {
+          enableGravity: document.getElementById('enableGravity').checked,
+          gravity: parseFloat(document.getElementById('gravity').value),
+          bounciness: parseFloat(document.getElementById('bounciness').value)
+        }
+      };
+
+      console.log('Current Configuration:', config);
+      return config;
+    }
+
+    // ===== IMPORT CONFIGURATION =====
+    function importConfig(config) {
+      document.getElementById('objectType').value = config.type;
+      document.getElementById('sizeX').value = config.size.x;
+      document.getElementById('sizeY').value = config.size.y;
+      document.getElementById('sizeZ').value = config.size.z;
+      document.getElementById('objectColor').value = config.color;
+      document.getElementById('metalness').value = config.material.metalness;
+      document.getElementById('roughness').value = config.material.roughness;
+      document.getElementById('opacity').value = config.material.opacity;
+      document.getElementById('enableRotation').checked = config.animation.enableRotation;
+      document.getElementById('rotationSpeed').value = config.animation.rotationSpeed;
+      document.getElementById('enableBounce').checked = config.animation.enableBounce;
+      document.getElementById('enableGravity').checked = config.physics.enableGravity;
+      document.getElementById('gravity').value = config.physics.gravity;
+      document.getElementById('bounciness').value = config.physics.bounciness;
+
+      // Update displays
+      initializeControls();
+      renderSimulation();
+    }
+
+    // ===== EXAMPLE: Load preset configurations =====
+    const presets = {
+      bouncyBall: {
+        type: 'sphere',
+        size: { x: 0.5, y: 0.5, z: 0.5 },
+        color: '#EF2D5E',
+        material: { metalness: 0.1, roughness: 0.8, opacity: 1 },
+        animation: { enableRotation: false, rotationSpeed: 2, enableBounce: false },
+        physics: { enableGravity: true, gravity: 9.8, bounciness: 0.9 }
+      },
+      spinningCube: {
+        type: 'box',
+        size: { x: 1.5, y: 1.5, z: 1.5 },
+        color: '#4CC3D9',
+        material: { metalness: 0.9, roughness: 0.1, opacity: 1 },
+        animation: { enableRotation: true, rotationSpeed: 3, enableBounce: false },
+        physics: { enableGravity: false, gravity: 9.8, bounciness: 0.8 }
+      },
+      glowingTorus: {
+        type: 'torus',
+        size: { x: 1.2, y: 1.2, z: 1.2 },
+        color: '#FFC65D',
+        material: { metalness: 0.8, roughness: 0.2, opacity: 0.8 },
+        animation: { enableRotation: true, rotationSpeed: 1.5, enableBounce: true },
+        physics: { enableGravity: false, gravity: 9.8, bounciness: 0.8 }
+      }
+    };
+
+    // You can load presets like this:
+    // importConfig(presets.bouncyBall);
+
+    // ===== SCENE READY NOTIFICATION =====
+    document.querySelector('a-scene').addEventListener('loaded', () => {
+      console.log('✅ VR Scene loaded successfully!');
+      console.log('🎮 Controls: Space = Pause/Resume | R = Render | Esc = Reset');
+      console.log('📦 Use the control panel to modify object properties');
+    });
+  </script>
+
+</body>
+</html>
